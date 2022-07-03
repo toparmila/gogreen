@@ -1,0 +1,39 @@
+name: Automated Daily Commit
+
+on:
+  schedule:
+    - cron:  '0 10 * * *'
+  push:
+    paths:
+      - ".env"
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout Actions
+        uses: actions/checkout@v2
+
+      - name: Dotenv Action
+        id: dotenv
+        uses: falti/dotenv-action@v0.2.8
+
+      - name: Setup User Config
+        run: |
+          git config user.name ${{ steps.dotenv.outputs.user_name }}
+          git config user.email ${{ steps.dotenv.outputs.user_email }}
+          echo "username=${{ steps.dotenv.outputs.user_username }}" >> $GITHUB_ENV
+
+      - name: Update README.md
+        run: |
+          nowdate=$(date +"%B %d, %Y")
+          echo "$nowdate" | sed -e 's/<[^>]*>//g' > README.md
+          echo "::: Commiting the changes :::"
+          git add .
+          git commit -m "Committed on $nowdate"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          force_with_lease: true
